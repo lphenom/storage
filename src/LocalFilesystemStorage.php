@@ -62,7 +62,7 @@ final class LocalFilesystemStorage implements StorageInterface
         } catch (StorageException $e) {
             $exception = $e;
         } catch (\Throwable $e) {
-            $exception = new StorageException('Failed to write file: ' . $path . ' — ' . $e->getMessage(), 0, $e);
+            $exception = new StorageException('Failed to write file: ' . $path . ' — ' . $e->getMessage());
         }
 
         // Cleanup temp file if rename failed
@@ -94,7 +94,7 @@ final class LocalFilesystemStorage implements StorageInterface
         } catch (StorageException $e) {
             $exception = $e;
         } catch (\Throwable $e) {
-            $exception = new StorageException('Failed to read file: ' . $path . ' — ' . $e->getMessage(), 0, $e);
+            $exception = new StorageException('Failed to read file: ' . $path . ' — ' . $e->getMessage());
         }
 
         if ($exception !== null) {
@@ -109,7 +109,8 @@ final class LocalFilesystemStorage implements StorageInterface
     }
 
     /**
-     * @return resource
+     * Returns an open readable file handle (resource).
+     * In KPHP mode the return type is mixed — use fread()/fclose() directly.
      */
     public function stream(string $path): mixed
     {
@@ -131,7 +132,7 @@ final class LocalFilesystemStorage implements StorageInterface
         } catch (StorageException $e) {
             $exception = $e;
         } catch (\Throwable $e) {
-            $exception = new StorageException('Failed to open stream for: ' . $path . ' — ' . $e->getMessage(), 0, $e);
+            $exception = new StorageException('Failed to open stream for: ' . $path . ' — ' . $e->getMessage());
         }
 
         if ($exception !== null) {
@@ -162,7 +163,7 @@ final class LocalFilesystemStorage implements StorageInterface
         } catch (StorageException $e) {
             $exception = $e;
         } catch (\Throwable $e) {
-            $exception = new StorageException('Failed to delete file: ' . $path . ' — ' . $e->getMessage(), 0, $e);
+            $exception = new StorageException('Failed to delete file: ' . $path . ' — ' . $e->getMessage());
         }
 
         if ($exception !== null) {
@@ -180,7 +181,7 @@ final class LocalFilesystemStorage implements StorageInterface
         } catch (StorageException $e) {
             $exception = $e;
         } catch (\Throwable $e) {
-            $exception = new StorageException($e->getMessage(), 0, $e);
+            $exception = new StorageException($e->getMessage());
         }
 
         if ($exception !== null) {

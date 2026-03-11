@@ -70,7 +70,22 @@ private string $root;
 
 ---
 
-### 4. `try/finally` without `catch`
+### 4. Exception constructor — no `$previous` argument
+
+KPHP's `\Exception` constructor supports only 2 arguments: `(string $message, int $code)`.
+The 3rd argument `$previous` (previous exception chaining) is **not supported**.
+
+```php
+// ❌ FORBIDDEN in KPHP
+throw new StorageException('error', 0, $e);
+
+// ✅ CORRECT — include cause in the message string
+throw new StorageException('error: ' . $e->getMessage());
+```
+
+---
+
+### 5. `try/finally` without `catch`
 
 KPHP requires at least one `catch` block.
 
@@ -206,4 +221,5 @@ Both stages must exit with code 0.
 - [KPHP vs PHP differences](https://vkcom.github.io/kphp/kphp-language/kphp-vs-php/whats-the-difference.html)
 - [KPHP Docker image](https://hub.docker.com/r/vkcom/kphp)
 - [lphenom/storage — storage.md](./storage.md)
+
 

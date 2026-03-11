@@ -35,9 +35,10 @@ interface StorageInterface
     /**
      * Open a readable stream for the given path.
      *
-     * @param string $path Relative path within the storage root.
+     * Returns an open readable file handle (resource).
+     * In KPHP mode the return type is mixed — use fread()/fclose() directly.
      *
-     * @return resource An open readable file handle.
+     * @param string $path Relative path within the storage root.
      *
      * @throws StorageException If the file does not exist or cannot be opened.
      */
