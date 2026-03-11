@@ -4,4 +4,4 @@
 /.idea/
 *.phar
 /kphp-out/
-
+.phpunit.result.cache
