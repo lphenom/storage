@@ -1,32 +1,20 @@
-# Security Policy
+# Политика безопасности
 
-## Supported Versions
+## Поддерживаемые версии
 
-| Version | Supported          |
-|---------|--------------------|
-| 0.1.x   | :white_check_mark: |
+| Версия | Поддержка |
+|--------|-----------|
+| 0.x    | ✅         |
 
-## Reporting a Vulnerability
+## Сообщить об уязвимости
 
-If you discover a security vulnerability in `lphenom/storage`, please **do not** open a public GitHub issue.
+Пожалуйста, **не** создавайте публичный GitHub Issue для уязвимостей безопасности.
 
-Instead, please report it by email to: **popkovd.o@yandex.ru**
+Отправьте подробный отчёт на **popkovd.o@yandex.ru**, указав:
 
-Please include:
-- A description of the vulnerability
-- Steps to reproduce it
-- Potential impact
-- Suggested fix (optional)
+- Описание уязвимости
+- Шаги для воспроизведения
+- Затронутые версии
+- Предлагаемое исправление (опционально)
 
-We will respond within 72 hours and aim to release a patch within 14 days.
-
-## Security Considerations
-
-### Path Traversal Protection
-
-`LocalFilesystemStorage` guards against path traversal attacks by normalising all paths and ensuring they remain within the configured root directory. Any attempt to access files outside the root (e.g., via `../`) will throw a `StorageException`.
-
-### Atomic Writes
-
-`LocalFilesystemStorage::put()` uses atomic writes (write to a temp file, then rename) to prevent partial file reads during concurrent access.
-
+Мы стремимся ответить в течение **72 часов** и выпустить патч в течение **7 дней** для подтверждённых проблем.

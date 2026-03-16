@@ -1,5 +1,6 @@
 {
     "name": "lphenom/storage",
+    "version": "0.1.0",
     "description": "LPhenom Storage — filesystem storage abstraction for PHP and KPHP",
     "type": "library",
     "license": "MIT",

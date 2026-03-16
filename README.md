@@ -4,29 +4,29 @@
 [![PHP](https://img.shields.io/badge/php-%3E%3D8.1-8892BF.svg)](https://php.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-LPhenom Storage — filesystem storage abstraction for PHP 8.1+ and KPHP.
+LPhenom Storage — абстракция файлового хранилища для PHP 8.1+ и KPHP.
 
-Part of the [LPhenom](https://github.com/lphenom) framework ecosystem.
+Часть экосистемы фреймворка [LPhenom](https://github.com/lphenom).
 
-## Features
+## Возможности
 
-- 📦 `StorageInterface` — clean, minimal API
-- 🗂 `LocalFilesystemStorage` — local filesystem driver with path traversal protection and atomic writes
-- ⚡ KPHP-compatible — compiles to a static binary with [vkcom/kphp](https://github.com/vkcom/kphp)
-- 🛡 Strict types everywhere
-- 🧪 Full test coverage
+- 📦 `StorageInterface` — чистый, минималистичный API
+- 🗂 `LocalFilesystemStorage` — драйвер для локальной файловой системы с защитой от обхода путей и атомарной записью
+- ⚡ Совместимость с KPHP — компилируется в статический бинарник с [vkcom/kphp](https://github.com/vkcom/kphp)
+- 🛡 Строгая типизация везде
+- 🧪 Полное покрытие тестами
 
-## Requirements
+## Требования
 
 - PHP >= 8.1
 
-## Installation
+## Установка
 
 ```bash
 composer require lphenom/storage
 ```
 
-## Quick Start
+## Быстрый старт
 
 ```php
 use LPhenom\Storage\LocalFilesystemStorage;
@@ -34,27 +34,27 @@ use LPhenom\Storage\StorageException;
 
 $storage = new LocalFilesystemStorage('/var/app/uploads');
 
-// Store a file
+// Сохранить файл
 $storage->put('images/photo.jpg', file_get_contents('/tmp/photo.jpg'));
 
-// Check existence
+// Проверить существование
 if ($storage->exists('images/photo.jpg')) {
-    // Read content
+    // Прочитать содержимое
     $bytes = $storage->get('images/photo.jpg');
 
-    // Open as stream
+    // Открыть как поток
     $stream = $storage->stream('images/photo.jpg');
     fpassthru($stream);
     fclose($stream);
 }
 
-// Delete a file
+// Удалить файл
 $storage->delete('images/photo.jpg');
 ```
 
-## Error Handling
+## Обработка ошибок
 
-All methods throw `StorageException` on failure:
+Все методы выбрасывают `StorageException` при ошибке:
 
 ```php
 use LPhenom\Storage\StorageException;
@@ -62,32 +62,32 @@ use LPhenom\Storage\StorageException;
 try {
     $content = $storage->get('missing-file.txt');
 } catch (StorageException $e) {
-    echo 'Storage error: ' . $e->getMessage();
+    echo 'Ошибка хранилища: ' . $e->getMessage();
 }
 ```
 
-## Documentation
+## Документация
 
-See [docs/storage.md](docs/storage.md) for full documentation.
+Полная документация — в [docs/storage.md](docs/storage.md).
 
-## Development
+## Разработка
 
 ```bash
-make up      # Start Docker environment
-make test    # Run PHPUnit tests
-make lint    # Run PHPStan (level 9)
-make kphp-check  # Verify KPHP compilation + PHAR build
-make down    # Stop containers
+make up      # Запустить Docker-окружение
+make test    # Запустить тесты PHPUnit
+make lint    # Запустить PHPStan (уровень 9)
+make kphp-check  # Проверить совместимость с KPHP + сборку PHAR
+make down    # Остановить контейнеры
 ```
 
-## Contributing
+## Участие в разработке
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+См. [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Security
+## Безопасность
 
-See [SECURITY.md](SECURITY.md).
+См. [SECURITY.md](SECURITY.md).
 
-## License
+## Лицензия
 
-MIT © [LPhenom Contributors](LICENSE)
+MIT — [LPhenom Contributors](LICENSE)

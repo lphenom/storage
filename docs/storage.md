@@ -1,11 +1,11 @@
-# Storage
+# lphenom/storage — Документация
 
-`LPhenom\Storage` — filesystem storage abstraction for PHP 8.1+ and KPHP.
+`LPhenom\Storage` — абстракция файлового хранилища для PHP 8.1+ и KPHP.
 
-## Overview
+## Обзор
 
-The package provides a minimal, KPHP-compatible API for storing, reading, and deleting files.  
-It ships with one built-in driver: `LocalFilesystemStorage`.
+Пакет предоставляет минималистичный, KPHP-совместимый API для хранения, чтения и удаления файлов.  
+В комплекте поставляется один встроенный драйвер: `LocalFilesystemStorage`.
 
 ---
 
@@ -22,60 +22,60 @@ interface StorageInterface
 }
 ```
 
-### Methods
+### Методы
 
-| Method | Description |
-|--------|-------------|
-| `put(string $path, string $bytes, array $meta = []): void` | Write bytes to the given path. Creates subdirectories as needed. |
-| `get(string $path): string` | Read and return the full content of a file. |
-| `stream(string $path): resource` | Open a readable stream (file handle) for the given path. |
-| `delete(string $path): void` | Delete a file. |
-| `exists(string $path): bool` | Check whether a file exists at the given path. |
+| Метод | Описание |
+|-------|----------|
+| `put(string $path, string $bytes, array $meta = []): void` | Записать байты по заданному пути. При необходимости создаёт поддиректории. |
+| `get(string $path): string` | Прочитать и вернуть полное содержимое файла. |
+| `stream(string $path): resource` | Открыть читаемый поток (файловый дескриптор) для заданного пути. |
+| `delete(string $path): void` | Удалить файл. |
+| `exists(string $path): bool` | Проверить существование файла по заданному пути. |
 
-All methods throw `StorageException` on failure.
+Все методы выбрасывают `StorageException` при ошибке.
 
 ---
 
 ## LocalFilesystemStorage
 
-A storage driver backed by the local filesystem.
+Драйвер хранилища на основе локальной файловой системы.
 
-### Constructor
+### Конструктор
 
 ```php
 $storage = new LocalFilesystemStorage('/var/app/uploads');
 ```
 
-- The root directory will be created automatically if it does not exist.
-- All paths are relative to the root.
-- Throws `StorageException` if the root cannot be created.
+- Корневая директория будет создана автоматически, если она не существует.
+- Все пути указываются относительно корня.
+- Выбрасывает `StorageException`, если корневую директорию не удалось создать.
 
-### Path Traversal Protection
+### Защита от обхода путей
 
-All paths are sanitised before use:
+Все пути санируются перед использованием:
 
-1. Leading slashes and backslashes are stripped.
-2. The path is split into segments.
-3. Any `..` segment causes an immediate `StorageException` — traversal is never resolved silently.
-4. The final resolved path is verified to start with the root prefix as an additional safety check.
+1. Ведущие слэши и обратные слэши удаляются.
+2. Путь разбивается на сегменты.
+3. Любой сегмент `..` немедленно вызывает `StorageException` — обход никогда не разрешается молча.
+4. Итоговый путь дополнительно проверяется на наличие корневого префикса.
 
 ```php
-// ❌ throws StorageException — path traversal detected
+// ❌ выбрасывает StorageException — обнаружен обход пути
 $storage->put('../etc/passwd', 'evil');
 $storage->get('a/b/../../etc/passwd');
 ```
 
-### Atomic Writes
+### Атомарная запись
 
-`put()` uses a write-then-rename strategy to ensure atomicity:
+`put()` использует стратегию «запись во временный файл + переименование» для обеспечения атомарности:
 
-1. Content is written to a temporary file: `<path>.tmp.<uniqid>`.
-2. The temporary file is renamed to the final path (atomic on POSIX systems).
-3. If any step fails, the temporary file is cleaned up and a `StorageException` is thrown.
+1. Содержимое записывается во временный файл: `<path>.tmp.<uniqid>`.
+2. Временный файл переименовывается в итоговый путь (атомарная операция в POSIX-системах).
+3. При любой ошибке временный файл удаляется и выбрасывается `StorageException`.
 
-This guarantees that a concurrent reader never sees a partially written file.
+Это гарантирует, что параллельный читатель никогда не увидит частично записанный файл.
 
-### Usage Examples
+### Примеры использования
 
 ```php
 use LPhenom\Storage\LocalFilesystemStorage;
@@ -83,15 +83,15 @@ use LPhenom\Storage\StorageException;
 
 $storage = new LocalFilesystemStorage('/var/app/uploads');
 
-// Write a file
+// Записать файл
 $storage->put('invoices/2026-001.pdf', $pdfBytes);
 
-// Read a file
+// Прочитать файл
 $bytes = $storage->get('invoices/2026-001.pdf');
 
-// Check existence
+// Проверить существование
 if ($storage->exists('invoices/2026-001.pdf')) {
-    // Stream a file (useful for large files)
+    // Передать файл потоком (удобно для больших файлов)
     $stream = $storage->stream('invoices/2026-001.pdf');
     while (!feof($stream)) {
         echo fread($stream, 8192);
@@ -99,11 +99,11 @@ if ($storage->exists('invoices/2026-001.pdf')) {
     fclose($stream);
 }
 
-// Delete a file
+// Удалить файл
 $storage->delete('invoices/2026-001.pdf');
 ```
 
-### Error Handling
+### Обработка ошибок
 
 ```php
 use LPhenom\Storage\StorageException;
@@ -111,7 +111,7 @@ use LPhenom\Storage\StorageException;
 try {
     $bytes = $storage->get('missing.txt');
 } catch (StorageException $e) {
-    // File not found, permission error, etc.
+    // Файл не найден, ошибка прав доступа и т.д.
     echo $e->getMessage();
 }
 ```
@@ -120,7 +120,7 @@ try {
 
 ## StorageException
 
-All errors are reported via `StorageException`, which extends `\RuntimeException`.
+Все ошибки сообщаются через `StorageException`, который расширяет `\RuntimeException`.
 
 ```php
 use LPhenom\Storage\StorageException;
@@ -128,15 +128,15 @@ use LPhenom\Storage\StorageException;
 try {
     $storage->delete('important.txt');
 } catch (StorageException $e) {
-    // log or re-throw
+    // логировать или пробросить дальше
 }
 ```
 
 ---
 
-## Implementing a Custom Driver
+## Реализация собственного драйвера
 
-To add a new backend (S3, GCS, FTP, etc.), implement `StorageInterface`:
+Для добавления нового бэкенда (S3, GCS, FTP и т.д.) реализуйте `StorageInterface`:
 
 ```php
 use LPhenom\Storage\StorageInterface;
@@ -153,28 +153,28 @@ final class S3Storage implements StorageInterface
 
     public function put(string $path, string $bytes, array $meta = []): void
     {
-        // upload to S3 ...
+        // загрузить в S3 ...
     }
 
     public function get(string $path): string
     {
-        // download from S3 ...
+        // скачать из S3 ...
         return '';
     }
 
     public function stream(string $path): mixed
     {
-        // return a stream ...
+        // вернуть поток ...
     }
 
     public function delete(string $path): void
     {
-        // delete from S3 ...
+        // удалить из S3 ...
     }
 
     public function exists(string $path): bool
     {
-        // check S3 ...
+        // проверить наличие в S3 ...
         return false;
     }
 }
@@ -182,26 +182,26 @@ final class S3Storage implements StorageInterface
 
 ---
 
-## KPHP Compatibility
+## Совместимость с KPHP
 
-| Feature | Status |
-|---------|--------|
-| No `Reflection` API | ✅ |
-| No `eval()` | ✅ |
-| No dynamic class loading (`new $class()`) | ✅ |
-| No `str_starts_with` / `str_ends_with` / `str_contains` | ✅ uses `substr` / `strpos` |
-| No constructor property promotion | ✅ properties declared explicitly |
-| No `readonly` properties | ✅ |
-| `try/catch` with at least one `catch` | ✅ |
-| `file()` called with 1 argument only | ✅ (not used; `file_get_contents` used instead) |
-| `stream()` returns `mixed` (typed as `resource` in PHPDoc) | ✅ KPHP-compatible signature |
-| `declare(strict_types=1)` in every file | ✅ |
+| Возможность | Статус |
+|-------------|--------|
+| Нет Reflection API | ✅ |
+| Нет `eval()` | ✅ |
+| Нет динамической загрузки классов (`new $class()`) | ✅ |
+| Нет `str_starts_with` / `str_ends_with` / `str_contains` | ✅ используются `substr` / `strpos` |
+| Нет Constructor Property Promotion | ✅ свойства объявлены явно |
+| Нет `readonly` свойств | ✅ |
+| `try/catch` всегда с хотя бы одним `catch` | ✅ |
+| `file()` вызывается только с 1 аргументом | ✅ (не используется; вместо этого используется `file_get_contents`) |
+| `stream()` возвращает `mixed` (тип `resource` в PHPDoc) | ✅ KPHP-совместимая сигнатура |
+| `declare(strict_types=1)` в каждом файле | ✅ |
 
-> See [kphp-compatibility.md](./kphp-compatibility.md) for the full KPHP compatibility guide.
+> Полное руководство по совместимости с KPHP — в [kphp-compatibility.md](./kphp-compatibility.md).
 
-### KPHP Entrypoint
+### Точка входа для KPHP
 
-KPHP does not support Composer autoloading. The file `build/kphp-entrypoint.php` loads all source files with explicit `require_once` in dependency order:
+KPHP не поддерживает автозагрузку Composer. Файл `build/kphp-entrypoint.php` явно подключает все исходные файлы в порядке зависимостей:
 
 ```php
 require_once __DIR__ . '/../src/StorageException.php';
@@ -209,27 +209,26 @@ require_once __DIR__ . '/../src/StorageInterface.php';
 require_once __DIR__ . '/../src/LocalFilesystemStorage.php';
 ```
 
-### Verifying KPHP Compatibility
+### Проверка совместимости с KPHP
 
 ```bash
-# Build KPHP binary + PHAR
+# Собрать бинарник KPHP + PHAR
 make kphp-check
-# or directly:
+# или напрямую:
 docker build -f Dockerfile.check -t lphenom-storage-check .
 ```
 
-Both build stages must exit with code 0:
-- **Stage 1 (`kphp-build`)** — compiles with `vkcom/kphp`, runs the binary.
-- **Stage 2 (`phar-build`)** — builds a PHAR with PHP 8.1, runs the smoke test.
+Обе стадии сборки должны завершиться с кодом 0:
+- **Стадия 1 (`kphp-build`)** — компиляция с `vkcom/kphp`, запуск бинарника.
+- **Стадия 2 (`phar-build`)** — сборка PHAR с PHP 8.1, запуск smoke-теста.
 
 ---
 
-## Development
+## Разработка
 
 ```bash
-make up      # Start Docker environment (PHP 8.1-alpine)
-make test    # Run PHPUnit (28 tests)
-make lint    # Run PHPStan (level 9)
-make down    # Stop containers
+make up      # Запустить Docker-окружение (PHP 8.1-alpine)
+make test    # Запустить PHPUnit (28 тестов)
+make lint    # Запустить PHPStan (уровень 9)
+make down    # Остановить контейнеры
 ```
-

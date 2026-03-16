@@ -1,52 +1,52 @@
-# KPHP Compatibility Guide — lphenom/storage
+# Руководство по совместимости с KPHP — lphenom/storage
 
-This document describes all KPHP constraints applied in `lphenom/storage`
-and the patterns used to satisfy them.
-
----
-
-## How KPHP compilation works
-
-KPHP (`vkcom/kphp`) compiles PHP source into a **static C++ binary**:
-
-- KPHP does **not** use PHP runtime during compilation — it has its own PHP parser.
-- The compiled binary does **not** depend on PHP.
-- KPHP uses strict type inference and refuses to compile ambiguous or dynamic code.
-- The Docker image `vkcom/kphp` is based on Ubuntu 20.04 focal with PHP 7.4 tooling.
-
-> **Important:** The minimum PHP version for **development/runtime** is 8.1.  
-> The PHP 7.4 inside the KPHP Docker image is the compiler toolchain only — not your runtime.
+Данный документ описывает все ограничения KPHP, применённые в `lphenom/storage`,
+и паттерны, используемые для их соблюдения.
 
 ---
 
-## Forbidden constructs
+## Как работает компиляция KPHP
+
+KPHP (`vkcom/kphp`) компилирует PHP-исходники в **статический C++ бинарник**:
+
+- KPHP **не использует** PHP runtime при компиляции — у него есть собственный парсер PHP.
+- Скомпилированный бинарник **не зависит** от PHP.
+- KPHP использует строгий вывод типов и отказывается компилировать неоднозначный или динамический код.
+- Docker-образ `vkcom/kphp` основан на Ubuntu 20.04 focal с инструментарием PHP 7.4.
+
+> **Важно:** Минимальная версия PHP для **разработки/runtime** — 8.1.  
+> PHP 7.4 внутри Docker-образа KPHP — это только инструментарий компилятора, а не ваш runtime.
+
+---
+
+## Запрещённые конструкции
 
 ### 1. `str_starts_with` / `str_ends_with` / `str_contains`
 
-These PHP 8.0+ functions are **not implemented in KPHP**.
+Эти функции PHP 8.0+ **не реализованы в KPHP**.
 
 ```php
-// ❌ FORBIDDEN
+// ❌ ЗАПРЕЩЕНО
 if (str_starts_with($path, '/')) { ... }
 
-// ✅ CORRECT
+// ✅ ПРАВИЛЬНО
 if (substr($path, 0, 1) === '/') { ... }
 if (strpos($path, 'needle') !== false) { ... }
 ```
 
-In `LocalFilesystemStorage::resolvePath()` all string checks use `substr()` and `strpos()`.
+В `LocalFilesystemStorage::resolvePath()` все проверки строк используют `substr()` и `strpos()`.
 
 ---
 
-### 2. Constructor property promotion
+### 2. Constructor Property Promotion
 
 ```php
-// ❌ FORBIDDEN in KPHP
+// ❌ ЗАПРЕЩЕНО в KPHP
 final class LocalFilesystemStorage {
     public function __construct(private string $root) {}
 }
 
-// ✅ CORRECT
+// ✅ ПРАВИЛЬНО
 final class LocalFilesystemStorage {
     private string $root;
 
@@ -58,46 +58,46 @@ final class LocalFilesystemStorage {
 
 ---
 
-### 3. `readonly` properties
+### 3. `readonly` свойства
 
 ```php
-// ❌ FORBIDDEN in KPHP
+// ❌ ЗАПРЕЩЕНО в KPHP
 private readonly string $root;
 
-// ✅ CORRECT
+// ✅ ПРАВИЛЬНО
 private string $root;
 ```
 
 ---
 
-### 4. Exception constructor — no `$previous` argument
+### 4. Конструктор исключения — без аргумента `$previous`
 
-KPHP's `\Exception` constructor supports only 2 arguments: `(string $message, int $code)`.
-The 3rd argument `$previous` (previous exception chaining) is **not supported**.
+Конструктор `\Exception` в KPHP поддерживает только 2 аргумента: `(string $message, int $code)`.
+Третий аргумент `$previous` (цепочка предыдущих исключений) **не поддерживается**.
 
 ```php
-// ❌ FORBIDDEN in KPHP
+// ❌ ЗАПРЕЩЕНО в KPHP
 throw new StorageException('error', 0, $e);
 
-// ✅ CORRECT — include cause in the message string
+// ✅ ПРАВИЛЬНО — включить причину в строку сообщения
 throw new StorageException('error: ' . $e->getMessage());
 ```
 
 ---
 
-### 5. `try/finally` without `catch`
+### 5. `try/finally` без `catch`
 
-KPHP requires at least one `catch` block.
+KPHP требует наличия хотя бы одного блока `catch`.
 
 ```php
-// ❌ FORBIDDEN
+// ❌ ЗАПРЕЩЕНО
 try {
     $result = file_put_contents($tmp, $bytes);
 } finally {
     if (is_file($tmp)) { unlink($tmp); }
 }
 
-// ✅ CORRECT — used in LocalFilesystemStorage::put()
+// ✅ ПРАВИЛЬНО — используется в LocalFilesystemStorage::put()
 $exception = null;
 try {
     $result = file_put_contents($tmp, $bytes);
@@ -115,47 +115,47 @@ if ($exception !== null) { throw $exception; }
 
 ---
 
-### 5. `!isset() + throw` type narrowing
+### 6. Сужение типов через `!isset() + throw`
 
-KPHP does not narrow types after `!isset() + throw`. Use explicit null assignment:
+KPHP не сужает типы после `!isset() + throw`. Используйте явное присваивание null:
 
 ```php
-// ❌ KPHP does not narrow $val after this
+// ❌ KPHP не сужает тип $val после этого
 if (!isset($this->map[$key])) { throw new Exception(); }
-$val = $this->map[$key]; // type still ?T in KPHP
+$val = $this->map[$key]; // тип всё ещё ?T в KPHP
 
-// ✅ CORRECT — used throughout LocalFilesystemStorage
+// ✅ ПРАВИЛЬНО — используется повсеместно в LocalFilesystemStorage
 $val = $this->map[$key] ?? null;
 if ($val === null) { throw new StorageException('...'); }
 ```
 
 ---
 
-### 6. Reflection API
+### 7. Reflection API
 
-Not used anywhere in this package. All behaviour is explicit — no `ReflectionClass`,
-no `get_class()`, no `class_exists()`.
-
----
-
-### 7. `eval()` and dynamic class loading
-
-Not used. No `new $className()`, no `call_user_func()` with string class names.
+Не используется нигде в этом пакете. Всё поведение явное — нет `ReflectionClass`,
+нет `get_class()`, нет `class_exists()`.
 
 ---
 
-### 8. `file()` with flags
+### 8. `eval()` и динамическая загрузка классов
 
-KPHP supports `file()` with only one argument.
-
-This package does not use `file()` — content is read with `file_get_contents()` instead.
+Не используется. Нет `new $className()`, нет `call_user_func()` со строковыми именами классов.
 
 ---
 
-### 9. `stream()` return type
+### 9. `file()` с флагами
 
-KPHP has limited support for `resource` as a return type in interfaces.
-The method is declared as `mixed` in the interface signature with a `@return resource` PHPDoc:
+KPHP поддерживает `file()` только с одним аргументом.
+
+В этом пакете `file()` не используется — содержимое читается через `file_get_contents()`.
+
+---
+
+### 10. Возвращаемый тип `stream()`
+
+KPHP имеет ограниченную поддержку `resource` как возвращаемого типа в интерфейсах.
+Метод объявлен как `mixed` в сигнатуре интерфейса с `@return resource` в PHPDoc:
 
 ```php
 /**
@@ -164,16 +164,16 @@ The method is declared as `mixed` in the interface signature with a `@return res
 public function stream(string $path): mixed;
 ```
 
-The `stream()` method is included in the KPHP entrypoint but is marked as optional
-for KPHP-mode callers who do not need streaming.
+Метод `stream()` включён в точку входа KPHP, но помечен как опциональный
+для KPHP-вызывающих, которым не нужна потоковая передача.
 
 ---
 
-## Entrypoint for KPHP
+## Точка входа для KPHP
 
-KPHP does not support Composer PSR-4 autoloading.
-The file `build/kphp-entrypoint.php` includes all source files explicitly,
-in dependency order (exceptions and interfaces before classes):
+KPHP не поддерживает PSR-4 автозагрузку Composer.
+Файл `build/kphp-entrypoint.php` явно подключает все исходные файлы
+в порядке зависимостей (исключения и интерфейсы — перед классами):
 
 ```php
 require_once __DIR__ . '/../src/StorageException.php';
@@ -183,16 +183,16 @@ require_once __DIR__ . '/../src/LocalFilesystemStorage.php';
 
 ---
 
-## Allowed constructs (KPHP-friendly)
+## Допустимые конструкции (совместимые с KPHP)
 
-| Construct | Status |
-|-----------|--------|
+| Конструкция | Статус |
+|-------------|--------|
 | `declare(strict_types=1)` | ✅ |
 | `final class` / `interface` | ✅ |
 | `?Type` nullable, `int\|string` union | ✅ |
-| `array<K, V>` in PHPDoc | ✅ |
-| `new ClassName()` (explicit, not dynamic) | ✅ |
-| `try/catch` with at least one `catch` | ✅ |
+| `array<K, V>` в PHPDoc | ✅ |
+| `new ClassName()` (явное, не динамическое) | ✅ |
+| `try/catch` с хотя бы одним `catch` | ✅ |
 | `instanceof` | ✅ |
 | `substr()`, `strpos()`, `strlen()` | ✅ |
 | `file_get_contents()`, `file_put_contents()` | ✅ |
@@ -203,23 +203,22 @@ require_once __DIR__ . '/../src/LocalFilesystemStorage.php';
 
 ---
 
-## Verification
+## Проверка
 
 ```bash
 docker build -f Dockerfile.check -t lphenom-storage-check .
 ```
 
-- **Stage `kphp-build`**: compiles with `vkcom/kphp`, runs the binary as a non-root user.
-- **Stage `phar-build`**: builds a PHAR with PHP 8.1, runs the smoke test.
+- **Стадия `kphp-build`**: компиляция с `vkcom/kphp`, запуск бинарника от имени непривилегированного пользователя.
+- **Стадия `phar-build`**: сборка PHAR с PHP 8.1, запуск smoke-теста.
 
-Both stages must exit with code 0.
+Обе стадии должны завершиться с кодом 0.
 
 ---
 
-## References
+## Ссылки
 
-- [KPHP vs PHP differences](https://vkcom.github.io/kphp/kphp-language/kphp-vs-php/whats-the-difference.html)
-- [KPHP Docker image](https://hub.docker.com/r/vkcom/kphp)
+- [Отличия KPHP от PHP](https://vkcom.github.io/kphp/kphp-language/kphp-vs-php/whats-the-difference.html)
+- [Docker-образ KPHP](https://hub.docker.com/r/vkcom/kphp)
 - [lphenom/storage — storage.md](./storage.md)
-
 
